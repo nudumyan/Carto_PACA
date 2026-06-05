@@ -247,8 +247,8 @@
     </footer>
 
     <script>
-        // Initialize map centered on PACA region (approximately)
-        const map = L.map('map').setView([43.5, 6.0], 7);
+        // Initialize map with better bounds for PACA region
+        const map = L.map('map').setView([43.8, 5.8], 6);
 
         // Add base layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -264,6 +264,9 @@
             communes: L.featureGroup(),
             clpe: L.featureGroup()
         };
+
+        // Track loaded layers for bounds calculation
+        let loadedLayers = {};
 
         // Add only region and departements layers to map initially
         layers.region.addTo(map);
@@ -299,6 +302,28 @@
             layer.bindPopup(popupContent);
         }
 
+        // Function to fit map bounds to all layers
+        function fitMapToBounds() {
+            const allBounds = [];
+            
+            Object.keys(layers).forEach(layerName => {
+                if (layers[layerName].getLayers().length > 0) {
+                    allBounds.push(layers[layerName].getBounds());
+                }
+            });
+
+            if (allBounds.length > 0) {
+                // Combine all bounds
+                let combinedBounds = allBounds[0];
+                for (let i = 1; i < allBounds.length; i++) {
+                    combinedBounds.extend(allBounds[i]);
+                }
+                
+                // Fit map with some padding
+                map.fitBounds(combinedBounds, { padding: [50, 50], maxZoom: 8 });
+            }
+        }
+
         // Function to load GeoJSON
         function loadGeoJSON(url, layerName, type) {
             const statusElement = document.getElementById(`${layerName}-status`);
@@ -315,6 +340,13 @@
                         style: () => getStyle(null, type),
                         onEachFeature: (feature, layer) => onEachFeature(feature, layer, type)
                     }).addTo(layers[layerName]);
+                    
+                    loadedLayers[layerName] = true;
+                    
+                    // Adjust map bounds when region layer is loaded
+                    if (layerName === 'region') {
+                        setTimeout(fitMapToBounds, 100);
+                    }
                     
                     statusElement.textContent = '✓ Loaded';
                     statusElement.className = 'status success';
