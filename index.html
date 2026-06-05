@@ -247,7 +247,9 @@
     </footer>
 
     <script>
-        // Initialize map with better bounds for PACA region
+        // Initialize map with fixed center and zoom for PACA region
+        // Center: [43.7, 5.3] - Latitude, Longitude of PACA region center
+        // Zoom: 7 - Fixed zoom level for consistent regional overview
         const map = L.map('map').setView([43.7, 5.3], 7);
 
         // Add base layer
@@ -264,9 +266,6 @@
             communes: L.featureGroup(),
             clpe: L.featureGroup()
         };
-
-        // Track loaded layers for bounds calculation
-        let loadedLayers = {};
 
         // Add only region and departements layers to map initially
         layers.region.addTo(map);
@@ -302,28 +301,6 @@
             layer.bindPopup(popupContent);
         }
 
-        // Function to fit map bounds to all layers
-        function fitMapToBounds() {
-            const allBounds = [];
-            
-            Object.keys(layers).forEach(layerName => {
-                if (layers[layerName].getLayers().length > 0) {
-                    allBounds.push(layers[layerName].getBounds());
-                }
-            });
-
-            if (allBounds.length > 0) {
-                // Combine all bounds
-                let combinedBounds = allBounds[0];
-                for (let i = 1; i < allBounds.length; i++) {
-                    combinedBounds.extend(allBounds[i]);
-                }
-                
-                // Fit map with some padding - fit to bounds with maxZoom 7 for good overview
-                map.fitBounds(combinedBounds, { padding: [50, 50], maxZoom: 7 });
-            }
-        }
-
         // Function to load GeoJSON
         function loadGeoJSON(url, layerName, type) {
             const statusElement = document.getElementById(`${layerName}-status`);
@@ -340,13 +317,6 @@
                         style: () => getStyle(null, type),
                         onEachFeature: (feature, layer) => onEachFeature(feature, layer, type)
                     }).addTo(layers[layerName]);
-                    
-                    loadedLayers[layerName] = true;
-                    
-                    // Adjust map bounds when region layer is loaded
-                    if (layerName === 'region') {
-                        setTimeout(fitMapToBounds, 100);
-                    }
                     
                     statusElement.textContent = '✓ Loaded';
                     statusElement.className = 'status success';
@@ -453,7 +423,7 @@
             });
         });
 
-        console.log('Carto PACA map initialized with all GeoJSON layers.');
+        console.log('Carto PACA map initialized with fixed center (43.7, 5.3) and zoom level 7.');
     </script>
 </body>
 </html>
