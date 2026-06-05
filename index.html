@@ -286,12 +286,12 @@
                 });
         }
 
-        // Load GeoJSON files
-        loadGeoJSON('region_filtre.geojson', 'region', 'region');
-        loadGeoJSON('dep_filtre.geojson', 'departements', 'departements');
-        loadGeoJSON('epci_filtre.geojson', 'epci', 'epci');
-        loadGeoJSON('commune_filtre.geojson', 'communes', 'communes');
-        loadGeoJSON('CLPE_filtre.geojson', 'clpe', 'clpe');
+        // Load GeoJSON files from data folder
+        loadGeoJSON('data/region_filtre.geojson', 'region', 'region');
+        loadGeoJSON('data/dep_filtre.geojson', 'departements', 'departements');
+        loadGeoJSON('data/epci_filtre.geojson', 'epci', 'epci');
+        loadGeoJSON('data/commune_filtre.geojson', 'communes', 'communes');
+        loadGeoJSON('data/CLPE_filtre.geojson', 'clpe', 'clpe');
 
         // Layer toggle functionality
         document.getElementById('region-toggle').addEventListener('change', function() {
