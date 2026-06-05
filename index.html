@@ -113,6 +113,32 @@
             padding: 20px;
             color: #7f8c8d;
         }
+
+        .status {
+            font-size: 0.85em;
+            margin-top: 5px;
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
+        }
+
+        .status.loading {
+            display: block;
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status.success {
+            display: block;
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            display: block;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -129,21 +155,34 @@
             </div>
             <div class="layer-control">
                 <label>
-                    <input type="checkbox" id="communes-toggle" checked>
-                    <span>Communes</span>
+                    <input type="checkbox" id="region-toggle" checked>
+                    <span>Region</span>
                 </label>
-                <label>
-                    <input type="checkbox" id="epci-toggle" checked>
-                    <span>EPCI (Inter-municipal)</span>
-                </label>
-                <label>
-                    <input type="checkbox" id="clpe-toggle">
-                    <span>CLPE</span>
-                </label>
+                <div class="status" id="region-status"></div>
+
                 <label>
                     <input type="checkbox" id="departements-toggle" checked>
                     <span>Départements</span>
                 </label>
+                <div class="status" id="departements-status"></div>
+
+                <label>
+                    <input type="checkbox" id="epci-toggle" checked>
+                    <span>EPCI (Inter-municipal)</span>
+                </label>
+                <div class="status" id="epci-status"></div>
+
+                <label>
+                    <input type="checkbox" id="communes-toggle" checked>
+                    <span>Communes</span>
+                </label>
+                <div class="status" id="communes-status"></div>
+
+                <label>
+                    <input type="checkbox" id="clpe-toggle">
+                    <span>CLPE (Legislative)</span>
+                </label>
+                <div class="status" id="clpe-status"></div>
             </div>
 
             <h2>Information</h2>
@@ -152,9 +191,10 @@
                 <br><br>
                 <strong>PACA Region:</strong>
                 <ul style="margin-left: 15px; margin-top: 10px;">
+                    <li>Region</li>
                     <li>Communes</li>
-                    <li>EPCI (Établissements Publics de Coopération Intercommunale)</li>
-                    <li>Circonscriptions Législatives (CLPE)</li>
+                    <li>EPCI</li>
+                    <li>Circonscriptions Législatives</li>
                     <li>Départements</li>
                 </ul>
             </div>
@@ -179,10 +219,11 @@
 
         // Layer groups
         const layers = {
-            communes: L.featureGroup(),
+            region: L.featureGroup(),
+            departements: L.featureGroup(),
             epci: L.featureGroup(),
-            clpe: L.featureGroup(),
-            departements: L.featureGroup()
+            communes: L.featureGroup(),
+            clpe: L.featureGroup()
         };
 
         // Add all layers to map initially
@@ -191,10 +232,11 @@
         // Style function
         function getStyle(feature, type) {
             const colors = {
-                communes: '#3498db',
+                region: '#9b59b6',
+                departements: '#e74c3c',
                 epci: '#2ecc71',
-                clpe: '#f39c12',
-                departements: '#e74c3c'
+                communes: '#3498db',
+                clpe: '#f39c12'
             };
             return {
                 fillColor: colors[type] || '#3498db',
@@ -215,55 +257,48 @@
                 });
             }
             layer.bindPopup(popupContent);
-            layer.on('click', function() {
-                console.log(`Clicked ${type}:`, feature);
-            });
         }
 
         // Function to load GeoJSON
         function loadGeoJSON(url, layerName, type) {
+            const statusElement = document.getElementById(`${layerName}-status`);
+            statusElement.textContent = 'Loading...';
+            statusElement.className = 'status loading';
+
             fetch(url)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
                 .then(data => {
                     L.geoJSON(data, {
                         style: () => getStyle(null, type),
                         onEachFeature: (feature, layer) => onEachFeature(feature, layer, type)
                     }).addTo(layers[layerName]);
+                    
+                    statusElement.textContent = '✓ Loaded';
+                    statusElement.className = 'status success';
                 })
                 .catch(error => {
                     console.error(`Error loading ${layerName}:`, error);
-                    alert(`Could not load ${layerName} GeoJSON file.`);
+                    statusElement.textContent = `✗ Error loading`;
+                    statusElement.className = 'status error';
                 });
         }
 
-        // Load GeoJSON files (update paths as needed)
-        // Example: loadGeoJSON('geojson/communes.geojson', 'communes', 'communes');
-        // Example: loadGeoJSON('geojson/epci.geojson', 'epci', 'epci');
-        // Example: loadGeoJSON('geojson/clpe.geojson', 'clpe', 'clpe');
-        // Example: loadGeoJSON('geojson/departements.geojson', 'departements', 'departements');
+        // Load GeoJSON files
+        loadGeoJSON('region_filtre.geojson', 'region', 'region');
+        loadGeoJSON('dep_filtre.geojson', 'departements', 'departements');
+        loadGeoJSON('epci_filtre.geojson', 'epci', 'epci');
+        loadGeoJSON('commune_filtre.geojson', 'communes', 'communes');
+        loadGeoJSON('CLPE_filtre.geojson', 'clpe', 'clpe');
 
         // Layer toggle functionality
-        document.getElementById('communes-toggle').addEventListener('change', function() {
+        document.getElementById('region-toggle').addEventListener('change', function() {
             if (this.checked) {
-                map.addLayer(layers.communes);
+                map.addLayer(layers.region);
             } else {
-                map.removeLayer(layers.communes);
-            }
-        });
-
-        document.getElementById('epci-toggle').addEventListener('change', function() {
-            if (this.checked) {
-                map.addLayer(layers.epci);
-            } else {
-                map.removeLayer(layers.epci);
-            }
-        });
-
-        document.getElementById('clpe-toggle').addEventListener('change', function() {
-            if (this.checked) {
-                map.addLayer(layers.clpe);
-            } else {
-                map.removeLayer(layers.clpe);
+                map.removeLayer(layers.region);
             }
         });
 
@@ -275,7 +310,31 @@
             }
         });
 
-        console.log('Carto PACA map initialized. Ready to load GeoJSON files.');
+        document.getElementById('epci-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(layers.epci);
+            } else {
+                map.removeLayer(layers.epci);
+            }
+        });
+
+        document.getElementById('communes-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(layers.communes);
+            } else {
+                map.removeLayer(layers.communes);
+            }
+        });
+
+        document.getElementById('clpe-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(layers.clpe);
+            } else {
+                map.removeLayer(layers.clpe);
+            }
+        });
+
+        console.log('Carto PACA map initialized with all GeoJSON layers.');
     </script>
 </body>
 </html>
