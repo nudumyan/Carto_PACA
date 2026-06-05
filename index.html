@@ -247,8 +247,8 @@
     </footer>
 
     <script>
-        // Initialize map with better bounds for PACA region - Zoomed in more and centered on PACA
-        const map = L.map('map').setView([43.9, 5.5], 9);
+        // Initialize map with better bounds for PACA region - Zoomed in and centered on PACA
+        const map = L.map('map').setView([43.9, 5.5], 8);
 
         // Add base layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -319,8 +319,8 @@
                     combinedBounds.extend(allBounds[i]);
                 }
                 
-                // Fit map with some padding - increased maxZoom to 9 for better zoom
-                map.fitBounds(combinedBounds, { padding: [50, 50], maxZoom: 9 });
+                // Fit map with some padding
+                map.fitBounds(combinedBounds, { padding: [50, 50], maxZoom: 8 });
             }
         }
 
