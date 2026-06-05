@@ -167,13 +167,13 @@
                 <div class="status" id="departements-status"></div>
 
                 <label>
-                    <input type="checkbox" id="epci-toggle" checked>
+                    <input type="checkbox" id="epci-toggle">
                     <span>EPCI (Inter-municipal)</span>
                 </label>
                 <div class="status" id="epci-status"></div>
 
                 <label>
-                    <input type="checkbox" id="communes-toggle" checked>
+                    <input type="checkbox" id="communes-toggle">
                     <span>Communes</span>
                 </label>
                 <div class="status" id="communes-status"></div>
@@ -226,8 +226,9 @@
             clpe: L.featureGroup()
         };
 
-        // Add all layers to map initially
-        Object.values(layers).forEach(layer => layer.addTo(map));
+        // Add only region and departements layers to map initially
+        layers.region.addTo(map);
+        layers.departements.addTo(map);
 
         // Style function
         function getStyle(feature, type) {
