@@ -6,6 +6,7 @@
     <title>Carte régionale PACA</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -94,6 +95,38 @@
             border-radius: 4px;
             font-size: 0.9em;
             color: #34495e;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        .export-btn:hover {
+            background-color: #229954;
+        }
+
+        .export-btn:active {
+            background-color: #1e8449;
+        }
+
+        .export-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
         }
 
         footer {
@@ -197,6 +230,12 @@
                     <li>Comités Locaux Pour l'Emploi</li>
                     <li>Départements</li>
                 </ul>
+            </div>
+
+            <div class="export-section">
+                <h2>Exportation</h2>
+                <button id="export-btn" class="export-btn">📥 Exporter en image</button>
+                <div class="status" id="export-status"></div>
             </div>
         </div>
 
@@ -333,6 +372,53 @@
             } else {
                 map.removeLayer(layers.clpe);
             }
+        });
+
+        // Export map as image
+        document.getElementById('export-btn').addEventListener('click', function() {
+            const exportBtn = document.getElementById('export-btn');
+            const exportStatus = document.getElementById('export-status');
+            
+            // Disable button and show loading status
+            exportBtn.disabled = true;
+            exportStatus.textContent = 'Export en cours...';
+            exportStatus.className = 'status loading';
+
+            // Capture the map
+            html2canvas(document.getElementById('map'), {
+                backgroundColor: '#e8f4f8',
+                scale: 2,
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                // Create download link
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `Carto_PACA_${new Date().toISOString().slice(0, 10)}.png`;
+                link.click();
+
+                // Show success message
+                exportStatus.textContent = '✓ Export réussi !';
+                exportStatus.className = 'status success';
+                
+                // Re-enable button
+                exportBtn.disabled = false;
+
+                // Clear status after 3 seconds
+                setTimeout(() => {
+                    exportStatus.className = 'status';
+                }, 3000);
+            }).catch(error => {
+                console.error('Export error:', error);
+                exportStatus.textContent = '✗ Erreur lors de l\'export';
+                exportStatus.className = 'status error';
+                exportBtn.disabled = false;
+
+                // Clear status after 3 seconds
+                setTimeout(() => {
+                    exportStatus.className = 'status';
+                }, 3000);
+            });
         });
 
         console.log('Carto PACA map initialized with all GeoJSON layers.');
