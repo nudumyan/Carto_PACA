@@ -188,6 +188,12 @@
             </div>
             <div class="layer-control">
                 <label>
+                    <input type="checkbox" id="osm-toggle" checked>
+                    <span>Fond OpenStreetMap</span>
+                </label>
+                <div class="status" id="osm-status"></div>
+                
+                <label>
                     <input type="checkbox" id="region-toggle" checked>
                     <span>Région</span>
                 </label>
@@ -247,6 +253,7 @@
     </footer>
 
     <script>
+        
         // Initialize map with fixed center and zoom for PACA region
         // Center: [43.7, 5.3] - Latitude, Longitude of PACA region center
         // Zoom: 8 - Fixed zoom level for consistent regional overview
@@ -261,6 +268,18 @@
             }
         );
 
+        osmLayer.addTo(map);
+
+        document.getElementById('osm-toggle').addEventListener('change', function () {
+
+                if (this.checked) {
+                    map.addLayer(osmLayer);
+                } else {
+                    map.removeLayer(osmLayer);
+                }
+
+            });
+        
         // Layer groups
         const layers = {
             region: L.featureGroup(),
