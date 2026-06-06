@@ -386,32 +386,19 @@
             exportStatus.textContent = 'Export en cours...';
             exportStatus.className = 'status loading';
 
-        // Sauvegarde de la vue actuelle
-            const center = map.getCenter();
-            const zoom = map.getZoom();
-
-            console.log("Export de la vue :", center, zoom);
-
-            // S'assurer que Leaflet a fini le rendu
-            map.whenReady(() => {
-
-            html2canvas(document.querySelector('#map'), {
+            // Capture the map
+            html2canvas(document.getElementById('map'), {
+                backgroundColor: '#e8f4f8',
                 scale: 2,
                 useCORS: true,
-                backgroundColor: null,
-                logging: false
+                allowTaint: true
             }).then(canvas => {
-
-             const link = document.createElement('a');
-                link.download =
-                `Carto_PACA_Z${zoom}_${new Date().toISOString().slice(0,10)}.png`;
-
+                // Create download link
+                const link = document.createElement('a');
                 link.href = canvas.toDataURL('image/png');
+                link.download = `Carto_PACA_${new Date().toISOString().slice(0, 10)}.png`;
                 link.click();
 
-            });
-
-        });
 
                     // Show success message
                     exportStatus.textContent = '✓ Export réussi !';
