@@ -6,7 +6,6 @@
     <title>Carte régionale PACA</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -257,7 +256,7 @@
         // Initialize map with fixed center and zoom for PACA region
         // Center: [43.7, 5.3] - Latitude, Longitude of PACA region center
         // Zoom: 8 - Fixed zoom level for consistent regional overview
-        const map = L.map('map').setView([44.0, 5.8], 8);
+        const map = L.map('map', {preferCanvas: true}).setView([44.0, 5.8], 8);
 
         // Add base layer
         const osmLayer = L.tileLayer(
@@ -399,56 +398,119 @@
         });
 
         // Export map as image
-        document.getElementById('export-btn').addEventListener('click', function() {
+        document.getElementById('export-btn').addEventListener('click', async function () {
+
             const exportBtn = document.getElementById('export-btn');
             const exportStatus = document.getElementById('export-status');
-            
-            // Disable button and show loading status
+
             exportBtn.disabled = true;
             exportStatus.textContent = 'Export en cours...';
             exportStatus.className = 'status loading';
 
-            // Force map to recalculate and re-render
-            map.invalidateSize(false);
-            
-            // Small delay to ensure map is fully rendered
-            setTimeout(() => {
-                // Capture the map
-                html2canvas(document.getElementById('map'), {
-                    backgroundColor: '#e8f4f8',
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true
-                }).then(canvas => {
-                    // Create download link
-                    const link = document.createElement('a');
-                    link.href = canvas.toDataURL('image/png');
-                    link.download = `Carto_PACA_${new Date().toISOString().slice(0, 10)}.png`;
-                    link.click();
+            try {
 
-                    // Show success message
-                    exportStatus.textContent = '✓ Export réussi !';
-                    exportStatus.className = 'status success';
-                    
-                    // Re-enable button
-                    exportBtn.disabled = false;
+                const mapEl = document.getElementById('map');
+                const rect = mapEl.getBoundingClientRect();
 
-                    // Clear status after 3 seconds
-                    setTimeout(() => {
-                        exportStatus.className = 'status';
-                    }, 3000);
-                }).catch(error => {
-                    console.error('Export error:', error);
-                    exportStatus.textContent = `✗ Erreur lors de l'export`;
-                    exportStatus.className = 'status error';
-                    exportBtn.disabled = false;
+                const width = Math.round(rect.width);
+                const height = Math.round(rect.height);
 
-                    // Clear status after 3 seconds
-                    setTimeout(() => {
-                        exportStatus.className = 'status';
-                    }, 3000);
-                });
-            }, 100);
+                const canvas = document.createElement('canvas');
+                canvas.width = width * 2;
+                canvas.height = height * 2;
+
+                const ctx = canvas.getContext('2d');
+                ctx.scale(2, 2);
+
+                ctx.fillStyle = '#e8f4f8';
+                ctx.fillRect(0, 0, width, height);
+
+        // ==========================
+        // TUILES OSM
+        // ==========================
+
+                const tiles = mapEl.querySelectorAll('.leaflet-tile');
+
+                for (const tile of tiles) {
+
+                    if (!tile.complete || tile.naturalWidth === 0) {
+                        continue;
+                    }
+
+                    const r = tile.getBoundingClientRect();
+
+                    try {
+
+                        ctx.drawImage(
+                            tile,
+                            r.left - rect.left,
+                            r.top - rect.top,
+                            r.width,
+                            r.height
+                        );
+
+                    } catch (e) {
+                        console.warn('Tuile ignorée', e);
+                    }
+                }
+
+                // ==========================
+                // CANVAS LEAFLET
+                // ==========================
+
+                const canvases = mapEl.querySelectorAll('canvas');
+
+                for (const c of canvases) {
+
+                    const r = c.getBoundingClientRect();
+
+                    try {
+
+                        ctx.drawImage(
+                            c,
+                            r.left - rect.left,
+                            r.top - rect.top,
+                            r.width,
+                            r.height
+                        );
+
+                    } catch (e) {
+                        console.warn('Canvas ignoré', e);
+                    }
+                }
+
+                // ==========================
+                // EXPORT
+                // ==========================
+
+                const link = document.createElement('a');
+
+                link.href = canvas.toDataURL('image/png');
+
+                link.download =
+                    `Carto_PACA_${new Date().toISOString().slice(0,10)}.png`;
+
+                link.click();
+
+                exportStatus.textContent = '✓ Export réussi';
+                exportStatus.className = 'status success';
+
+            } catch (err) {
+
+                console.error(err);
+
+                exportStatus.textContent = '✗ Erreur export';
+                exportStatus.className = 'status error';
+
+            } finally {
+
+                exportBtn.disabled = false;
+
+                setTimeout(() => {
+                    exportStatus.className = 'status';
+                }, 3000);
+            }
+
         });
 
         console.log('Carto PACA map initialized with fixed center (43.7, 5.3) and zoom level 8.');
