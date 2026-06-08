@@ -408,55 +408,48 @@
             exportStatus.textContent = 'Export en cours...';
             exportStatus.className = 'status loading';
 
-            map.invalidateSize(true);
-
+            // Force map to recalculate and re-render
+            map.invalidateSize(false);
+            
+            // Small delay to ensure map is fully rendered
             setTimeout(() => {
-
-                // Force redraw of vector layers
-                map.eachLayer(layer => {
-                    if (typeof layer.redraw === 'function') {
-                        layer.redraw();
-                    }
-                });
-
+                // Capture the map
                 html2canvas(document.getElementById('map'), {
                     backgroundColor: '#e8f4f8',
                     scale: 2,
                     useCORS: true,
-                    allowTaint: true,
-                    logging: false
+                    allowTaint: true
                 }).then(canvas => {
-
+                    // Create download link
                     const link = document.createElement('a');
                     link.href = canvas.toDataURL('image/png');
                     link.download = `Carto_PACA_${new Date().toISOString().slice(0, 10)}.png`;
                     link.click();
 
+                    // Show success message
                     exportStatus.textContent = '✓ Export réussi !';
                     exportStatus.className = 'status success';
-
+                    
+                    // Re-enable button
                     exportBtn.disabled = false;
 
+                    // Clear status after 3 seconds
                     setTimeout(() => {
                         exportStatus.className = 'status';
                     }, 3000);
-
                 }).catch(error => {
-
                     console.error('Export error:', error);
-
-                    exportStatus.textContent = '✗ Erreur lors de l\'export';
+                    exportStatus.textContent = `✗ Erreur lors de l'export`;
                     exportStatus.className = 'status error';
-
                     exportBtn.disabled = false;
 
+                    // Clear status after 3 seconds
                     setTimeout(() => {
                         exportStatus.className = 'status';
                     }, 3000);
-
                 });
-
-            }, 500);
+            }, 100);
+        });
 
         console.log('Carto PACA map initialized with fixed center (43.7, 5.3) and zoom level 8.');
     </script>
